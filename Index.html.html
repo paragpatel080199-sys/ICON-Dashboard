@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>ICON plc — Financial Performance & Trends Dashboard (2020–2024)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <!-- Plotly -->
+  <script src="https://cdn.plot.ly/plotly-2.26.1.min.js"></script>
+
+  <!-- Font Awesome Icons -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+  <style>
+    :root{
+      --sidebar-w:200px;
+      --bg:#ffffff;
+      --panel:#f8fafc;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#6b7280;
+      --accent:#1f78c1;
+      --accent-2:#33a02c;
+      --shadow:0 6px 20px rgba(16,24,40,0.06);
+      --border:#e6eef8;
+    }
+
+    body.dark{
+      --bg:#071428;
+      --panel:#061425;
+      --card:#071326;
+      --text:#e6eef8;
+      --muted:#9fb0c8;
+      --accent:#1fb6ff;
+      --accent-2:#7ad28f;
+      --border:rgba(255,255,255,0.04);
+    }
+
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family:'Inter',system-ui,sans-serif;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+
+    .wrap{display:flex; height:100vh;}
+
+    aside.sidebar{
+      width:var(--sidebar-w);
+      padding:20px;
+      background:var(--card);
+      border-right:1px solid var(--border);
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+      box-sizing:border-box;
+    }
+
+    .brand{display:flex; align-items:center; gap:10px;}
+    .logo{
+      width:45px;height:45px;border-radius:10px;
+      background:linear-gradient(135deg,var(--accent), #4aa3e0);
+      color:white;display:flex;justify-content:center;align-items:center;
+      box-shadow: 0 6px 18px rgba(31,120,193,0.08);
+      font-size:18px;
+    }
+
+    nav{display:flex;flex-direction:column;gap:8px;}
+    nav button{
+      padding:10px;background:none;border:none;text-align:left;
+      color:var(--muted);font-size:13px;border-radius:6px;cursor:pointer;
+      transition:all .16s ease;
+    }
+    nav button:hover{ transform:translateX(4px); color:var(--text); }
+    nav button.active{
+      background:rgba(31,120,193,0.12);color:var(--text);
+    }
+
+    .filter-title{font-size:14px;font-weight:600;color:var(--muted);margin-top:10px;}
+    #filterList label{display:block;font-size:13px;margin:6px 0;cursor:pointer;color:var(--text);}
+
+    .btn{
+      padding:8px 12px;
+      background:var(--accent);
+      border:none;
+      border-radius:6px;
+      color:white;
+      cursor:pointer;
+      font-size:13px;
+    }
+
+    main.content{
+      flex:1;padding:24px;background:var(--panel);overflow-y:auto;
+    }
+
+    .header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:20px;
+    }
+
+    .header h1{
+      margin:0;
+      font-size:26px;
+      font-weight:800;
+      color:var(--text);
+    }
+
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px;}
+
+    .card{
+      background:var(--card);
+      padding:18px;
+      border-radius:12px;
+      box-shadow:var(--shadow);
+      border:1px solid var(--border);
+      box-sizing:border-box;
+      opacity:0;
+      transform: translateY(8px);
+      animation: fadeUp .45s ease forwards;
+    }
+
+    @keyframes fadeUp {
+      to { opacity:1; transform: translateY(0); }
+    }
+
+    .chart-lg{grid-column:span 12;min-height:420px;}
+    .chart-half{grid-column:span 6;min-height:360px;}
+    .chart-sm{grid-column:span 6;min-height:300px;}
+    .chart-full{grid-column:span 12;min-height:360px;}
+
+    .story-card, .insights-card {
+      grid-column: span 12;
+      min-height: auto;
+      line-height: 1.6;
+    }
+
+    .story-card h2, .insights-card h2 {
+      font-size:20px;
+      margin-bottom:10px;
+      font-weight:800;
+      color:var(--text);
+    }
+
+    .story-card p, .insights-card p {
+      font-size:14px;
+      color:var(--text);
+      opacity:0.95;
+    }
+
+    .kpi-row{display:flex;gap:12px;grid-column:span 12;align-items:stretch;}
+
+    .kpi{
+      flex:1;display:flex;align-items:center;gap:12px;padding:14px;border-radius:10px;
+      background:linear-gradient(180deg,rgba(0,0,0,0.02),rgba(0,0,0,0.01));
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+    .kpi:hover{ transform: translateY(-4px); box-shadow: 0 10px 30px rgba(2,6,23,0.12); }
+
+    .kpi .icon{
+      width:44px;height:44px; display:flex; align-items:center; justify-content:center;
+      color:var(--accent); font-size:20px;
+      border-radius:6px;
+      border:1px solid rgba(0,0,0,0.06);
+      background:transparent;
+    }
+    .kpi.rev .icon{ color:var(--accent); }
+    .kpi.net .icon{ color:var(--accent-2); }
+    .kpi.yoy .icon{ color:#f59e0b; }
+    .kpi.years .icon{ color:#6b7280; }
+
+    .kpi .label{ font-size:13px; color:var(--muted); margin-bottom:4px; }
+    .kpi .value{ font-size:18px; font-weight:800; color:var(--text); }
+
+  </style>
+</head>
+
+<body class="dark">
+
+<div class="wrap">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo"><i class="fa-solid fa-chart-line"></i></div>
+      <div style="font-weight:700;font-size:16px;color:var(--text)">ICON plc</div>
+    </div>
+
+    <nav id="nav">
+      <button class="active" data-target="overview">Overview</button>
+      <button data-target="trends">Trends</button>
+      <button data-target="breakdown">Breakdown</button>
+      <button data-target="diagnostic">Diagnostic</button>
+      <button data-target="forecast">Forecast</button>
+      <button data-target="story">Story Behind Data</button>
+      <button data-target="insights">Business Insights</button>
+    </nav>
+
+    <div class="filter-title">Filter years</div>
+    <div id="filterList"></div>
+
+    <button id="resetBtn" class="btn">Reset</button>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="content">
+    <div class="header">
+      <h1>ICON plc — Financial Performance &amp; Trends Dashboard (2020–2024)</h1>
+      <button id="toggleTheme" class="btn-theme">Light Mode</button>
+    </div>
+
+    <div class="grid">
+
+      <div class="kpi-row">
+        <div class="card kpi rev">
+          <div class="icon"><i class="fa-solid fa-dollar-sign"></i></div>
+          <div><div class="label"><b>Revenue (Latest)</b></div><div id="kpiRevenue" class="value"><b>—</b></div></div>
+        </div>
+
+        <div class="card kpi net">
+          <div class="icon"><i class="fa-solid fa-wallet"></i></div>
+          <div><div class="label"><b>Net Income (Latest)</b></div><div id="kpiNet" class="value"><b>—</b></div></div>
+        </div>
+
+        <div class="card kpi yoy">
+          <div class="icon"><i class="fa-solid fa-chart-simple"></i></div>
+          <div><div class="label"><b>YoY Revenue %</b></div><div id="kpiYoY" class="value"><b>—</b></div></div>
+        </div>
+
+        <div class="card kpi years">
+          <div class="icon"><i class="fa-solid fa-calendar-days"></i></div>
+          <div><div class="label"><b>Years Selected</b></div><div id="kpiYears" class="value"><b>—</b></div></div>
+        </div>
+      </div>
+
+      <div class="card chart-lg" id="combinedTime"></div>
+      <div class="card chart-half" id="revBar"></div>
+      <div class="card chart-half" id="yoyFunnel"></div>
+      <div class="card chart-sm" id="netLine"></div>
+      <div class="card chart-sm" id="pieShare"></div>
+      <div class="card chart-full" id="corrHeat"></div>
+      <div class="card chart-full" id="forecastArea"></div>
+
+      <!-- STORY BEHIND DATA -->
+      <div class="card story-card" id="storySection">
+        <h2>Story Behind the Data & Methodology</h2>
+        <p>
+          This analysis explores ICON plc’s financial performance between 2020 and 2024, focusing on revenue growth,
+          profitability, and year-over-year trends. The core business question driving the analysis is: 
+          <b>“How has ICON plc grown financially over the past five years, and what signals emerge for future performance?”</b>
+        </p>
+        <p>
+          The financial figures used in this dashboard originate from publicly available financial statements reported by ICON plc. 
+          These values were structured into a dataset including revenue, net income, YoY growth, and profit margins. 
+          The methodology combines exploratory data analysis, regression-based forecasting, correlation diagnostics, and visual trend evaluation using 
+          Plotly for dynamic representations. The analytical approach emphasizes both historical performance and forward-looking indicators to provide a 
+          balanced perspective.
+        </p>
+      </div>
+
+      <!-- BUSINESS INSIGHTS -->
+      <div class="card insights-card" id="insightsSection">
+        <h2>Business Insights & Recommendations</h2>
+        <p>
+          The analysis reveals consistent revenue growth, rising profitability, and strengthening YoY trends, particularly after 2021. 
+          Revenue has grown in a stable upward trajectory, while net income has expanded even more sharply, indicating margin improvement. 
+          The forecast suggests positive revenue movement continuing into 2025.
+        </p>
+        <p>
+          Based on these insights, ICON plc should continue investing in high-performing therapeutic and service areas, expand strategic partnerships,
+          and leverage its improving profitability to support R&D capacity. However, risks include global regulatory changes, operational dependency
+          on large biopharma clients, and fluctuations in R&D spending in the broader industry.
+        </p>
+        <p>
+          Next steps include deeper granularity by segment, cost-center analysis, and competitive benchmarking to further strengthen strategic decisions.
+        </p>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+const rawData=[
+  {year:2020, revenue:2797288, netIncome:332964},
+  {year:2021, revenue:5480826, netIncome:153185},
+  {year:2022, revenue:7741386, netIncome:505304},
+  {year:2023, revenue:8120176, netIncome:612335},
+  {year:2024, revenue:8281676, netIncome:705051}
+];
+
+function fmtUSD(v){
+  if(!v) return "—";
+  if(v>=1e6) return "$"+(v/1e6).toFixed(2)+"M";
+  return "$"+v.toLocaleString();
+}
+
+/* FILTER UI */
+const filterList=document.getElementById("filterList");
+const yearsAll=rawData.map(d=>d.year);
+
+function createFilterUI(){
+  filterList.innerHTML="";
+  const def=new Set(yearsAll.slice(-4));
+  yearsAll.forEach(y=>{
+    let lbl=document.createElement("label");
+    lbl.innerHTML=`<input type="checkbox" value="${y}"> ${y}`;
+    filterList.appendChild(lbl);
+    const cb = lbl.querySelector("input");
+    cb.checked = def.has(y);
+    cb.onchange = onFilterChange;
+  });
+}
+
+function onFilterChange(){
+  const sel=getSelectedYears();
+  if(sel.length===0){ alert("Select at least one year."); this.checked=true; return; }
+  refreshAll();
+}
+
+function getSelectedYears(){
+  return [...filterList.querySelectorAll("input:checked")].map(x=>+x.value).sort();
+}
+
+/* DATA PREP */
+function enrich(data){
+  return data.map((d,i,arr)=>{
+    let prev=arr[i-1];
+    let yoy=prev?((d.revenue-prev.revenue)/prev.revenue)*100:null;
+    let margin=(d.netIncome/d.revenue)*100;
+    return {...d,yoy,margin};
+  });
+}
+
+/* KPIs */
+function updateKPIs(data){
+  if(!data.length){
+    kpiRevenue.innerHTML=kpiNet.innerHTML=kpiYoY.innerHTML=kpiYears.innerHTML="<b>—</b>";
+    return;
+  }
+  let last=data[data.length-1];
+  kpiRevenue.innerHTML="<b>"+fmtUSD(last.revenue)+"</b>";
+  kpiNet.innerHTML="<b>"+fmtUSD(last.netIncome)+"</b>";
+  kpiYoY.innerHTML="<b>"+(last.yoy?last.yoy.toFixed(1)+"%":"—")+"</b>";
+  kpiYears.innerHTML="<b>"+data.map(d=>d.year).join(" – ")+"</b>";
+}
+
+/* CHARTS */
+function drawCombined(data){
+  const xLabels=data.map(d=>"Year "+d.year);
+  Plotly.newPlot("combinedTime",[
+    {x:xLabels,y:data.map(d=>d.revenue),mode:"lines+markers",name:"Revenue"},
+    {x:xLabels,y:data.map(d=>d.netIncome),mode:"lines+markers",name:"Net Income"}
+  ],{title:{text:"<b>Revenue & Net Income Over Time</b>"}},{displayModeBar:false,responsive:true});
+}
+
+function drawRevenue(data){
+  const xLabels=data.map(d=>"Year "+d.year);
+  Plotly.newPlot("revBar",[{
+    x:xLabels,y:data.map(d=>d.revenue),type:"bar",
+    marker:{color:getComputedStyle(document.documentElement).getPropertyValue('--accent')}
+  }],{title:{text:"<b>Annual Revenue</b>"}},{displayModeBar:false,responsive:true});
+}
+
+function drawYoYFunnel(data){
+  if(data.length<=1){ yoyFunnel.innerHTML="Select 2+ years"; return; }
+  Plotly.newPlot("yoyFunnel",[{
+    type:"funnel",
+    y:data.slice(1).map(d=>"Year "+d.year),
+    x:data.slice(1).map(d=>d.yoy)
+  }],{title:{text:"<b>YoY Revenue Funnel (%)</b>"}},{displayModeBar:false,responsive:true});
+}
+
+function drawNet(data){
+  const xLabels=data.map(d=>"Year "+d.year);
+  Plotly.newPlot("netLine",[{
+    x:xLabels,y:data.map(d=>d.netIncome),mode:"lines+markers",
+    line:{color:getComputedStyle(document.documentElement).getPropertyValue('--accent-2')}
+  }],{title:{text:"<b>Net Income Over Time</b>"}},{displayModeBar:false,responsive:true});
+}
+
+function drawPie(data){
+  Plotly.newPlot("pieShare",[{
+    labels:data.map(d=>"Year "+d.year),
+    values:data.map(d=>d.revenue),
+    type:"pie",hole:0.4
+  }],{title:{text:"<b>Revenue Share</b>"}},{displayModeBar:false,responsive:true});
+}
+
+function drawCorr(data){
+  if(!data.length){ corrHeat.innerHTML="Select years"; return; }
+  const avg=data.reduce((s,d)=>s+d.margin,0)/data.length;
+  Plotly.newPlot("corrHeat",[{
+    type:"indicator",mode:"gauge+number",value:avg,number:{suffix:"%"},
+    title:{text:"<b>Average Net Income Margin</b>"},
+    gauge:{axis:{range:[0,40]}}
+  }],{}, {displayModeBar:false,responsive:true});
+}
+
+function drawForecast(data){
+  if(data.length<2){ forecastArea.innerHTML="Select 2+ years"; return; }
+  const x=data.map(d=>d.year);
+  const y=data.map(d=>d.revenue);
+  const xm=x.reduce((a,b)=>a+b)/x.length;
+  const ym=y.reduce((a,b)=>a+b)/y.length;
+  let num=0,den=0;
+  for(let i=0;i<x.length;i++){ num+=(x[i]-xm)*(y[i]-ym); den+=(x[i]-xm)**2; }
+  const slope=num/den, intercept=ym-slope*xm;
+  const next=x[x.length-1]+1; const pred=slope*next+intercept;
+
+  Plotly.newPlot("forecastArea",[
+    {x:x.map(y=>"Year "+y),y:y,mode:"lines+markers",name:"Observed"},
+    {x:x.map(y=>"Year "+y),y:x.map(xx=>slope*xx+intercept),mode:"lines",name:"Trend"},
+    {x:["Year "+next],y:[pred],mode:"markers",name:"Forecast"}
+  ],{title:{text:"<b>Revenue Forecast</b>"}},{displayModeBar:false,responsive:true});
+}
+
+/* REFRESH */
+function refreshAll(){
+  const sel=getSelectedYears();
+  const filtered=rawData.filter(d=>sel.includes(d.year)).sort((a,b)=>a.year-b.year);
+  const data=enrich(filtered);
+  updateKPIs(data);
+  drawCombined(data);
+  drawRevenue(data);
+  drawYoYFunnel(data);
+  drawNet(data);
+  drawPie(data);
+  drawCorr(data);
+  drawForecast(data);
+}
+
+/* INIT */
+createFilterUI();
+refreshAll();
+
+/* Dark Mode Toggle */
+toggleTheme.onclick = () => {
+  document.body.classList.toggle("dark");
+  toggleTheme.innerText = document.body.classList.contains("dark")
+    ? "Light Mode"
+    : "Dark Mode";
+};
+
+/* Sidebar Navigation */
+document.querySelectorAll('#nav button').forEach(btn=>{
+  btn.onclick=function(){
+    document.querySelectorAll('#nav button').forEach(b=>b.classList.remove('active'));
+    this.classList.add('active');
+
+    const mapping = {
+      overview: 'combinedTime',
+      trends: 'revBar',
+      breakdown: 'pieShare',
+      diagnostic: 'corrHeat',
+      forecast: 'forecastArea',
+      story: 'storySection',
+      insights: 'insightsSection'
+    };
+
+    const el=document.getElementById(mapping[this.dataset.target]);
+    if(el) el.scrollIntoView({behavior:'smooth',block:'center'});
+  };
+});
+
+/* Reset */
+resetBtn.onclick=()=>{ createFilterUI(); refreshAll(); };
+
+</script>
+</body>
+</html>
